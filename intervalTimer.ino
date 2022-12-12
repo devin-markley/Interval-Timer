@@ -58,8 +58,8 @@ int middleOfScreenY = 32;
 //Prototyping Functions
 void displayStringAt(const String &buf, int x, int y);
 bool isButtonPressed(int buttonPin, int &currentButtonState, int &lastButtonState);
-void incrementingTimeInitialy(int modeSeconds, int modeMinutes);
-void incrementingTimeDown(int modeSeconds, int modeMinutes);
+void incrementingTimeInitialy(int &modeSeconds, int &modeMinutes);
+void countdownTime(int modeSeconds, int modeMinutes);
 
 void setup() {
   //Declaring Buttons
@@ -120,176 +120,74 @@ void loop() {
   minutesButtonState = digitalRead(MINUTESBTN);
 
   //Storing total time for each mode
-switch (modeRun) {
-  case WORK:
-    if (secondsButtonState == HIGH) {
-      if (workSecondsLeft < 60) {
-        workSecondsLeft++;
-      } else {
-        workSecondsLeft = 0;
+  switch (modeRun) {
+    case WORK:
+      incremetingTimeInitialy(workSecondsLeft, workMinutesLeft);
+      break;
+    case REST:
+      incremetingTimeInitialy(restSecondsLeft, restMinutesLeft);
+      break;
+    case PERPARE:
+      incremetingTimeInitialy(perpareSecondsLeft, perpareMinutesLeft);
+      break;
+    case SETS:
+      //Adding one to sets when either minutes or seconds button is pressed
+      if (secondsButtonState == HIGH || minutesButtonState == HIGH) {
+        //Reseting sets back to zero after 50
+        if (setsLeft < 50) {
+          setsLeft++;
+        } else {
+          setsLeft = 0;
+        }
+        char buf[6];
+        sprintf(buf, "  %0d  ", setsLeft);
+        //Centering differently for one or two digit numbers
+        if (setsLeft < 10) {
+          displayStringAt(buf, minuteLocationX, middleOfScreenY);
+        } else {
+          displayStringAt(buf, 28, middleOfScreenY);
+        }
       }
-      char buf[4];
-      sprintf(buf, ":%02d", workSecondsLeft);
-      displayStringAt(buf, secondLocationX, middleOfScreenY);
-    }
-    if (minutesButtonState == HIGH) {
-      if (workMinutesLeft < 60) {
-        workMinutesLeft++;
-      } else {
-        workMinutesLeft = 0;
-      }
-      char buf[4];
-      sprintf(buf, "%02d", workMinutesLeft);
-      displayStringAt(buf, minuteLocationX, middleOfScreenY);
-    }
-    break;
-  case REST:
-    if (secondsButtonState == HIGH) {
-      if (restSecondsLeft < 60) {
-        restSecondsLeft++;
-      } else {
-        restSecondsLeft = 0;
-      }
-      char buf[4];
-      sprintf(buf, ":%02d", restSecondsLeft);
-      displayStringAt(buf, secondLocationX, middleOfScreenY);
-    }
-    if (minutesButtonState == HIGH) {
-      if (restMinutesLeft < 60) {
-        restMinutesLeft++;
-      } else {
-        restMinutesLeft = 0;
-      }
-      char buf[4];
-      sprintf(buf, "%02d", restMinutesLeft);
-      displayStringAt(buf, minuteLocationX, middleOfScreenY);
-    }
-    break;
-  case PERPARE:
-    if (secondsButtonState == HIGH) {
-      if (perpareSecondsLeft < 60) {
-        perpareSecondsLeft++;
-      } else {
-        perpareSecondsLeft = 0;
-      }
-      char buf[4];
-      sprintf(buf, ":%02d", perpareSecondsLeft);
-      displayStringAt(buf, secondLocationX, middleOfScreenY);
-    }
-    if (minutesButtonState == HIGH) {
-      if (perpareMinutesLeft < 60) {
-        perpareMinutesLeft++;
-      } else {
-        perpareMinutesLeft = 0;
-      }
-      char buf[4];
-      sprintf(buf, "%02d", perpareMinutesLeft);
-      displayStringAt(buf, minuteLocationX, middleOfScreenY);
-    }
-    break;
-  case SETS:
-    if (secondsButtonState == HIGH || minutesButtonState == HIGH) {
-      if (setsLeft < 50) {
-        setsLeft++;
-      } else {
-        setsLeft = 0;
-      }
-      char buf[6];
-      sprintf(buf, "  %0d  ", setsLeft);
+      break;
+  }
+
+  if (isButtonPressed(STARTBTN, startButtonState, lastStartButtonState)) {
+
+    displayStringAt("Prep", titleLocationX, titleLocationY);    
+    countdownTime(perpareSecondsLeft, perpareMinutesLeft);
+    
+    for (int s = setsLeft; s >= 0; s--) {
+      displayStringAt(" Set ", titleLocationX, titleLocationY);
+      char buf[20];
+      //TODO mess with later
+      sprintf(buf, "  %d  ", s);
       //Centering differently for one or two digit numbers
       if (setsLeft < 10) {
         displayStringAt(buf, minuteLocationX, middleOfScreenY);
       } else {
         displayStringAt(buf, 28, middleOfScreenY);
       }
-    }
-    break;
-}
+      delay(1000);
 
-if (isButtonPressed(STARTBTN, startButtonState, lastStartButtonState)) {
-  for (int g = perpareSecondsLeft; g >= 0; g--) {
-    displayStringAt("Prep", titleLocationX, titleLocationY);
-    char buf[5];
-    sprintf(buf, "%02d:%02d", perpareMinutesLeft, g);
-    displayStringAt(buf, minuteLocationX, middleOfScreenY);
-  }
-  for (int g = perpareMinutesLeft; g >= 0; g--) {
-    char buf[5];
-    sprintf(buf, "%02d:%02d", g, perpareSecondsLeft);
-    displayStringAt(buf, minuteLocationX, middleOfScreenY);
-    if (g < perpareMinutesLeft) {
-      for (int i = 59; i >= 0; i--) {
-        char buf[5];
-        sprintf(buf, "%02d:%02d", g, i);
-        displayStringAt(buf, minuteLocationX, middleOfScreenY);
-        delay(1000);
-      }
-    }
-  }
-
-  for (int s = setsLeft; s >= 0; s--) {
-    displayStringAt(" Set ", titleLocationX, titleLocationY);
-    char buf[5];
-    sprintf(buf, "  %0d  ", s);
-    //Centering differently for one or two digit numbers
-    if (setsLeft < 10) {
-        displayStringAt(buf, minuteLocationX, middleOfScreenY);
-      } else {
-        displayStringAt(buf, 28, middleOfScreenY);
-      }
-    delay(1000);
-
-    for (int g = workSecondsLeft; g >= 0; g--) {
       displayStringAt("Work", titleLocationX, titleLocationY);
-      char buf[5];
-      sprintf(buf, "%02d:%02d", workMinutesLeft, g);
-      displayStringAt(buf, minuteLocationX, middleOfScreenY);
-    }
-    for (int g = workMinutesLeft; g >= 0; g--) {
-      char buf[5];
-      sprintf(buf, "%02d:%02d", g, workSecondsLeft);
-      displayStringAt(buf, minuteLocationX, middleOfScreenY);
-      if (g < workMinutesLeft) {
-        for (int i = 59; i >= 0; i--) {
-          char buf[5];
-          sprintf(buf, "%02d:%02d", g, i);
-          displayStringAt(buf, minuteLocationX, middleOfScreenY);;
-          delay(1000);
-        }
-      }
-    }
-    for (int g = restSecondsLeft; g >= 0; g--) {
-      displayStringAt("Rest", titleLocationX, titleLocationY);
-      char buf[5];
-      sprintf(buf, "%02d:%02d", restMinutesLeft, g);
-      displayStringAt(buf, minuteLocationX, middleOfScreenY);
-    }
-    for (int g = restMinutesLeft; g >= 0; g--) {
-      char buf[5];
-      sprintf(buf, "%02d:%02d", g, restSecondsLeft);
-      displayStringAt(buf, minuteLocationX, middleOfScreenY);
-      if (g < restMinutesLeft) {
-        for (int i = 59; i >= 0; i--) {
-          char buf[5];
-          sprintf(buf, "%02d:%02d", g, i);
-          displayStringAt(buf, minuteLocationX, middleOfScreenY);
-          delay(1000);
-        }
-      }
-    }
-  }
-  //Reseting Timer
-  setsLeft = 0;
-  workMinutesLeft = 0;
-  workSecondsLeft = 0;
-  restMinutesLeft = 0;
-  restSecondsLeft = 0;
-  perpareMinutesLeft = 0;
-  perpareSecondsLeft = 0;
-}
-delay(100);
-}
+      countdownTime(workSecondsLeft, workMinutesLeft);
 
+      displayStringAt("Rest", titleLocationX, titleLocationY);
+      countdownTime(restSecondsLeft, restMinutesLeft);
+    }
+
+    //Reseting Timer
+    setsLeft = 0;
+    workMinutesLeft = 0;
+    workSecondsLeft = 0;
+    restMinutesLeft = 0;
+    restSecondsLeft = 0;
+    perpareMinutesLeft = 0;
+    perpareSecondsLeft = 0;
+    //TODO print after reset
+    delay(100);
+  }
+}
 bool isButtonPressed(int buttonPin, int &currentButtonState, int &lastButtonState) {
   currentButtonState = digitalRead(buttonPin);
   // compare the buttonState to its previous state
@@ -314,8 +212,8 @@ void displayStringAt(const String &buf, int x, int y) {
   display.display();
 }
 
-/* TODO: Implement these fuctions
-void incremetingTimeInitialy(int modeSeconds, int modeMinutes) {
+
+void incremetingTimeInitialy(int &modeSeconds, int &modeMinutes) {
   if (secondsButtonState == HIGH) {
     if (modeSeconds < 60) {
       modeSeconds++;
@@ -325,6 +223,7 @@ void incremetingTimeInitialy(int modeSeconds, int modeMinutes) {
     char buf[4];
     sprintf(buf, ":%02d", modeSeconds);
     displayStringAt(buf, secondLocationX, middleOfScreenY);
+    delay(100);
   }
   if (minutesButtonState == HIGH) {
     if (modeMinutes < 60) {
@@ -335,28 +234,28 @@ void incremetingTimeInitialy(int modeSeconds, int modeMinutes) {
     char buf[4];
     sprintf(buf, "%02d", modeMinutes);
     displayStringAt(buf, minuteLocationX, middleOfScreenY);
+    delay(100);
   }
 }
 
-void incrementingTimeDown(int modeSecondsLeft, int modeMinutesLeft) {
+void countdownTime(int modeSecondsLeft, int modeMinutesLeft) {
   for (int g = modeSecondsLeft; g >= 0; g--) {
-    displayStringAt("Work", titleLocationX, middleOfScreenY);
-    char buf[5];
+    char buf[10];
     sprintf(buf, "%02d:%02d", modeMinutesLeft, g);
     displayStringAt(buf, minuteLocationX, middleOfScreenY);
+    delay(1000);
   }
   for (int g = modeMinutesLeft; g >= 0; g--) {
-    char buf[5];
+    char buf[10];
     sprintf(buf, "%02d:%02d", g, modeSecondsLeft);
     displayStringAt(buf, minuteLocationX, middleOfScreenY);
     if (g < modeMinutesLeft) {
       for (int i = 59; i >= 0; i--) {
-        char buf[5];
+        char buf[10];
         sprintf(buf, "%02d:%02d", g, i);
         displayStringAt(buf, minuteLocationX, middleOfScreenY);
-        delay(100);
+        delay(1000);
       }
     }
   }
 }
-*/
